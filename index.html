@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Three.js Canyon Example</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+
+  <!-- Import map: resolve bare specifier "three" to the three.module CDN -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+    "three/": "https://unpkg.com/three@0.154.0/",
+    "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.6/build/index.module.js"
+  }
+}
+</script>
+</head>
+<body>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
