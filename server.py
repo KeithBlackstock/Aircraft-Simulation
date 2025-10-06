@@ -66,32 +66,58 @@ print("Backend mesh transformations complete.")
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("Frontend connected.")
+    print("Frontend connected. Waiting for initialization...")
 
-    # Initialize the aircraft at a starting position
-    # The mesh is now centered at [0,0,0] and scaled to match frontend's meters.
-    # So, we need to base the start_pos on the *transformed* mesh's bounds.
-    transformed_center = mesh.bounds.mean(axis=0) # This should be very close to [0,0,0]
-    transformed_max_z = mesh.bounds[1, 2]
+    # --- Default Starting Conditions ---
+    # These will be used if the frontend doesn't send valid data.
+    default_pos = [-150.0, 0.0, 5.0]
+    default_vel = [20.0, 0.0, 0.0]
 
-    # Start 20m above the highest point of the transformed mesh
-    start_pos = [transformed_center[0] - 150, transformed_center[1], transformed_center[2] + 5]
-    start_vel = [20, 0, 0] # Give it some initial velocity
-    
+    start_pos = default_pos
+    start_vel = default_vel
+
+    try:
+        # Wait for the initialization message from the client
+        init_data = await websocket.receive_text()
+        message = json.loads(init_data)
+
+        # Check if it's the expected 'init' message
+        if message.get('type') == 'init':
+            # Safely get position and velocity, with fallback to defaults
+            pos_from_client = message.get('position')
+            vel_from_client = message.get('velocity')
+
+            if isinstance(pos_from_client, list) and len(pos_from_client) == 3 and isinstance(vel_from_client, list) and len(vel_from_client) == 3:
+                start_pos = [float(p) for p in pos_from_client]
+                start_vel = [float(v) for v in vel_from_client]
+                print(f"Received starting conditions: Position={start_pos}, Velocity={start_vel}")
+            else:
+                print("WARNING: Invalid 'init' message format. Using default starting conditions.")
+        else:
+            print("WARNING: First message was not of type 'init'. Using default starting conditions.")
+
+    except (WebSocketDisconnect, json.JSONDecodeError, TypeError) as e:
+        print(f"Error receiving init message: {e}. Using default starting conditions.")
+        # If the client disconnects or sends malformed data before init, we can just end the connection.
+        await websocket.close()
+        return # Exit the function early
+
+    # Initialize the aircraft with the determined starting conditions
     aircraft = Aircraft(initial_pos=start_pos, initial_velocity=start_vel)
+    print(f"Aircraft initialized at Position={aircraft.pos.tolist()}, Velocity={aircraft.velocity.tolist()}")
 
     try:
         while True:
             # --- Threat Detection using Trimesh ---
             # Find the closest point on the canyon mesh to the aircraft's current position
             closest_point, distance, face_id = mesh.nearest.on_surface([aircraft.pos])
-            
+
             # The 'closest_point' is a numpy array within a list, so we extract it
             surface_point = closest_point[0]
-            
+
             # The threat normal is the normal of the closest face
             surface_normal = mesh.face_normals[face_id[0]]
-            
+
             # The ROA needs a list of threats
             current_threats = [(surface_point, surface_normal)]
 

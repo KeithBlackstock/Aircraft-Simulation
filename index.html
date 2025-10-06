@@ -4,8 +4,44 @@
   <meta charset="UTF-8" />
   <title>Three.js Canyon Example</title>
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
     canvas { display: block; }
+    #control-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 5px;
+        z-index: 100;
+    }
+    .input-group {
+        margin-bottom: 10px;
+    }
+    .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .input-group input {
+        width: 60px;
+        margin-right: 5px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+    button {
+        padding: 10px 15px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+        border-radius: 3px;
+        cursor: pointer;
+        width: 100%;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
   </style>
 
   <!-- Import map: resolve bare specifier "three" to the three.module CDN -->
@@ -20,6 +56,21 @@
 </script>
 </head>
 <body>
+  <div id="control-panel">
+    <div class="input-group">
+        <label>Position (X, Y, Z)</label>
+        <input type="number" id="posX" value="-150">
+        <input type="number" id="posY" value="0">
+        <input type="number" id="posZ" value="5">
+    </div>
+    <div class="input-group">
+        <label>Velocity (X, Y, Z)</label>
+        <input type="number" id="velX" value="20">
+        <input type="number" id="velY" value="0">
+        <input type="number" id="velZ" value="0">
+    </div>
+    <button id="start-button">Start Simulation</button>
+  </div>
   <script type="module" src="main.js"></script>
 </body>
 </html>
