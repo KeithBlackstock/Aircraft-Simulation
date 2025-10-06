@@ -138,37 +138,59 @@ gltfLoader.load(
 //
 // WebSocket setup for aircraft data
 //
-const ws = new WebSocket("ws://localhost:8000/ws");
+let ws;
 
-ws.onopen = (event) => {
-    console.log("WebSocket connected!");
-};
+document.getElementById('start-button').addEventListener('click', () => {
+    // Hide the control panel after starting
+    document.getElementById('control-panel').style.display = 'none';
 
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    
-    // Position (convert from meters to Three.js units)
-    latestAircraftPosition.set(
-        data.position[0] / METERS_PER_THREE_UNIT,
-        data.position[1] / METERS_PER_THREE_UNIT,
-        data.position[2] / METERS_PER_THREE_UNIT
-    );
+    // Get values from input fields
+    const posX = parseFloat(document.getElementById('posX').value);
+    const posY = parseFloat(document.getElementById('posY').value);
+    const posZ = parseFloat(document.getElementById('posZ').value);
+    const velX = parseFloat(document.getElementById('velX').value);
+    const velY = parseFloat(document.getElementById('velY').value);
+    const velZ = parseFloat(document.getElementById('velZ').value);
 
-    // Velocity (store as is for direction, normalization will handle magnitude)
-    latestAircraftVelocity.set(
-        data.velocity[0],
-        data.velocity[1],
-        data.velocity[2]
-    );
-};
+    // Create the WebSocket connection
+    ws = new WebSocket("ws://localhost:8000/ws");
 
-ws.onerror = (error) => {
-    console.error("WebSocket Error:", error);
-};
+    ws.onopen = (event) => {
+        console.log("WebSocket connected!");
+        const initMessage = {
+            type: 'init',
+            position: [posX, posY, posZ],
+            velocity: [velX, velY, velZ]
+        };
+        ws.send(JSON.stringify(initMessage));
+    };
 
-ws.onclose = (event) => {
-    console.log("WebSocket disconnected:", event);
-};
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        // Position (convert from meters to Three.js units)
+        latestAircraftPosition.set(
+            data.position[0] / METERS_PER_THREE_UNIT,
+            data.position[1] / METERS_PER_THREE_UNIT,
+            data.position[2] / METERS_PER_THREE_UNIT
+        );
+
+        // Velocity (store as is for direction, normalization will handle magnitude)
+        latestAircraftVelocity.set(
+            data.velocity[0],
+            data.velocity[1],
+            data.velocity[2]
+        );
+    };
+
+    ws.onerror = (error) => {
+        console.error("WebSocket Error:", error);
+    };
+
+    ws.onclose = (event) => {
+        console.log("WebSocket disconnected:", event);
+    };
+});
 
 
 //
@@ -212,18 +234,3 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
-
-//
-// Quick UI: simple keyboard toggles
-//
-window.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'h') {
-    if (carvedModel) carvedModel.visible = !carvedModel.visible;
-  } else if (e.key.toLowerCase() === 'j') { // Added 'j' to toggle jet1 visibility
-    if (aircraftModel) aircraftModel.visible = !aircraftModel.visible;
-  }
-  else if (e.key.toLowerCase() === 'r') {
-    camera.position.set(15, 10, 22);
-    controls.target.set(0, 0, 0);
-  }
-});
